@@ -1,7 +1,7 @@
-// Configuration
+// Configuration with your Supabase credentials
 const config = {
-  supabaseUrl: 'YOUR_SUPABASE_URL',
-  supabaseKey: 'YOUR_SUPABASE_KEY',
+  supabaseUrl: 'https://ffmykoselvxqdtwgkdps.supabase.co',
+  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmbXlrb3NlbHZ4cWR0d2drZHBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MzgxMDYsImV4cCI6MjA2NTUxNDEwNn0.egF_Yiw_8XdmxdFf-1sFtfPKqvzOsXd9_E1l4Z2cIGA',
   minPostLength: 10,
   maxPostLength: 500,
   colors: [
@@ -53,12 +53,21 @@ function setupAuthListener() {
 async function setupUser(session) {
   currentUser.id = session.user.id;
   
-  // Generate random username and color if first time
+  // Generate random username and color
   const randomNumber = Math.floor(Math.random() * 10000);
   currentUser.username = `anon_${randomNumber}`;
   currentUser.color = config.colors[Math.floor(Math.random() * config.colors.length)];
   
-  // In a real app, you'd save this to your database
+  // Save user to database if not exists
+  const { error } = await supabase
+    .from('users')
+    .upsert({
+      id: currentUser.id,
+      username: currentUser.username,
+      color: currentUser.color
+    }, { onConflict: 'id' });
+  
+  if (error) console.error('Error saving user:', error);
 }
 
 // Render Functions
@@ -269,11 +278,3 @@ function formatTime(timestamp) {
 
 // Initialize the app
 initApp();
-
-// Create RPC function for upvotes (run this in Supabase SQL editor)
-// CREATE OR REPLACE FUNCTION increment_upvotes(post_id bigint)
-// RETURNS void AS $$
-// BEGIN
-//   UPDATE posts SET upvotes = COALESCE(upvotes, 0) + 1 WHERE id = post_id;
-// END;
-// $$ LANGUAGE plpgsql;
